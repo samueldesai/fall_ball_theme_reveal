@@ -117,6 +117,22 @@
       filter: drop-shadow(0 0 24px rgba(109, 59, 214, 0.55));
     }
 
+    .date {
+      margin-bottom: 12px;
+      font-family: "Orbitron", sans-serif;
+      font-weight: 700;
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--star);
+      text-shadow: 0 0 18px rgba(94, 231, 255, 0.55);
+    }
+
+    #blackout {
+      z-index: 3;
+      background: #000;
+    }
+
     .tagline {
       margin-bottom: 34px;
       font-weight: 300;
@@ -224,6 +240,7 @@
     <div>
       <p class="kicker">Stanford Fall Ball &middot; 2026</p>
       <h1>The Theme Reveal</h1>
+      <p class="date">Friday, November 6, 2026</p>
       <p class="tagline">This year's ball is out of this world.</p>
       <button class="reveal-btn" id="revealBtn" type="button">Reveal the Theme</button>
       <p class="hint">Sound on for the full experience</p>
@@ -233,9 +250,12 @@
   <section class="screen" id="countdown" hidden>
     <div>
       <p class="intro-line">Introducing the Fall Ball theme in&hellip;</p>
-      <span class="count" id="count" aria-live="assertive">3</span>
+      <span class="count" id="count" aria-live="assertive">&nbsp;</span>
+      <p class="date" style="margin-top: 18px;">November 6, 2026</p>
     </div>
   </section>
+
+  <section class="screen" id="blackout" hidden></section>
 
   <section class="screen" id="player" hidden>
     <video id="video" src="fall-ball-theme.mp4" preload="auto" playsinline controls></video>
@@ -323,15 +343,68 @@
     frame();
 
     /* ---------- reveal ---------- */
+    // Timing for countdown.mp3: "10" lands at 1.8s, then one number per
+    // second, reaching 0 at 11.8s. Nudge COUNT_START to re-sync.
+    const COUNT_START = 1.8;
+    const COUNT_FROM = 10;
+
     const start = document.getElementById("start");
     const countdown = document.getElementById("countdown");
+    const blackout = document.getElementById("blackout");
     const player = document.getElementById("player");
     const count = document.getElementById("count");
     const video = document.getElementById("video");
+    const audio = new Audio("countdown.mp3");
+    audio.preload = "auto";
+
+    let shown = null;
+    let finished = false;
+
+    function showNumber(n) {
+      if (n === shown) return;
+      shown = n;
+      count.textContent = n;
+      count.classList.remove("tick");
+      void count.offsetWidth;
+      count.classList.add("tick");
+      warp = 2 + (COUNT_FROM - n) * 0.9;
+    }
+
+    function goBlack() {
+      if (!blackout.hidden) return;
+      warp = 1;
+      countdown.hidden = true;
+      blackout.hidden = false;
+    }
+
+    function playVideo() {
+      if (finished) return;
+      finished = true;
+      goBlack();
+      blackout.hidden = true;
+      player.hidden = false;
+      video.currentTime = 0;
+      video.play().catch(() => {
+        /* if playback is still blocked, the controls let them press play */
+      });
+    }
+
+    function sync() {
+      if (finished) return;
+      const t = audio.currentTime;
+      if (t >= COUNT_START) {
+        const n = COUNT_FROM - Math.floor(t - COUNT_START);
+        if (n > 0) showNumber(n);
+        else goBlack();
+      }
+      requestAnimationFrame(sync);
+    }
+
+    audio.addEventListener("ended", playVideo);
 
     document.getElementById("revealBtn").addEventListener("click", () => {
-      // Start and immediately pause inside the click, so the browser lets the
-      // video play with sound after the countdown (needed on Safari/iOS).
+      // Start and immediately pause the video inside the click, so the browser
+      // lets it play with sound later (needed on Safari/iOS).
       video.play().then(() => {
         video.pause();
         video.currentTime = 0;
@@ -339,33 +412,24 @@
 
       start.hidden = true;
       countdown.hidden = false;
-      warp = 3;
+      warp = 1.6;
 
-      let n = 3;
-      const show = () => {
-        count.textContent = n;
-        count.classList.remove("tick");
-        void count.offsetWidth;
-        count.classList.add("tick");
-        warp = 3 + (3 - n) * 2;
-      };
-      show();
-
-      const timer = setInterval(() => {
-        n -= 1;
-        if (n > 0) {
-          show();
-          return;
-        }
-        clearInterval(timer);
-        warp = 1;
-        countdown.hidden = true;
-        player.hidden = false;
-        video.currentTime = 0;
-        video.play().catch(() => {
-          /* if playback is still blocked, the controls let them press play */
-        });
-      }, 1000);
+      audio.play().then(() => requestAnimationFrame(sync)).catch(() => {
+        // audio blocked: fall back to a silent timer with the same timing
+        const began = performance.now();
+        const fake = () => {
+          if (finished) return;
+          const t = (performance.now() - began) / 1000;
+          if (t >= COUNT_START) {
+            const n = COUNT_FROM - Math.floor(t - COUNT_START);
+            if (n > 0) showNumber(n);
+            else goBlack();
+          }
+          if (t >= 16.2) playVideo();
+          else requestAnimationFrame(fake);
+        };
+        requestAnimationFrame(fake);
+      });
     });
   </script>
 </body>
