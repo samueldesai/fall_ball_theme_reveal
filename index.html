@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stanford Fall Ball 2026 | Theme Reveal</title>
+  <meta name="description" content="The official theme reveal for the Stanford Fall Ball 2026.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=New+Rocker&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070404;
+      --blood: #b3121b;
+      --blood-bright: #e3232f;
+      --blood-dark: #5c0a0e;
+      --bone: #f4ead8;
+      --muted: #b4a594;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      overflow: hidden;
+      font-family: "Cinzel", Georgia, serif;
+      color: var(--bone);
+      background:
+        radial-gradient(ellipse at 50% 30%, rgba(179, 18, 27, 0.3), transparent 60%),
+        var(--bg);
+    }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+      text-align: center;
+      transition: opacity 0.6s ease;
+    }
+
+    .screen[hidden] {
+      display: none;
+    }
+
+    .kicker {
+      margin-bottom: 18px;
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: var(--blood-bright);
+    }
+
+    h1 {
+      margin-bottom: 34px;
+      font-family: "New Rocker", "Cinzel", serif;
+      font-weight: 400;
+      font-size: clamp(2.6rem, 9vw, 5.6rem);
+      line-height: 1;
+      text-shadow: 0 0 40px rgba(179, 18, 27, 0.4);
+    }
+
+    .reveal-btn {
+      padding: 16px 30px;
+      border: 1px solid var(--blood);
+      background: linear-gradient(180deg, var(--blood-bright), var(--blood) 60%, var(--blood-dark));
+      color: var(--bone);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(179, 18, 27, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .reveal-btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .reveal-btn:focus-visible {
+      outline: 2px solid var(--blood-bright);
+      outline-offset: 4px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 10px 30px rgba(179, 18, 27, 0.35); }
+      50% { box-shadow: 0 10px 44px rgba(227, 35, 47, 0.7); }
+    }
+
+    .hint {
+      margin-top: 18px;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .intro-line {
+      font-size: clamp(1.1rem, 3.4vw, 1.8rem);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--bone);
+    }
+
+    .count {
+      display: block;
+      margin-top: 10px;
+      font-family: "New Rocker", "Cinzel", serif;
+      font-size: clamp(8rem, 34vw, 18rem);
+      line-height: 1;
+      color: var(--blood-bright);
+      text-shadow: 0 0 60px rgba(227, 35, 47, 0.6);
+    }
+
+    .count.tick {
+      animation: tick 1s ease-out;
+    }
+
+    @keyframes tick {
+      0% { transform: scale(1.6); opacity: 0; filter: blur(8px); }
+      25% { transform: scale(1); opacity: 1; filter: none; }
+      80% { opacity: 1; }
+      100% { transform: scale(0.85); opacity: 0.15; }
+    }
+
+    #player {
+      background: #000;
+      padding: 0;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <section class="screen" id="start">
+    <div>
+      <p class="kicker">Stanford Fall Ball &middot; 2026</p>
+      <h1>The Theme Reveal</h1>
+      <button class="reveal-btn" id="revealBtn" type="button">Reveal the Theme</button>
+      <p class="hint">Sound on for the full experience</p>
+    </div>
+  </section>
+
+  <section class="screen" id="countdown" hidden>
+    <div>
+      <p class="intro-line">Introducing the Fall Ball theme in&hellip;</p>
+      <span class="count" id="count" aria-live="assertive">3</span>
+    </div>
+  </section>
+
+  <section class="screen" id="player" hidden>
+    <video id="video" src="fall-ball-theme.mp4" preload="auto" playsinline controls></video>
+  </section>
+
+  <script>
+    const start = document.getElementById("start");
+    const countdown = document.getElementById("countdown");
+    const player = document.getElementById("player");
+    const count = document.getElementById("count");
+    const video = document.getElementById("video");
+
+    document.getElementById("revealBtn").addEventListener("click", () => {
+      // Start and immediately pause inside the click, so the browser lets the
+      // video play with sound after the countdown (needed on Safari/iOS).
+      video.play().then(() => {
+        video.pause();
+        video.currentTime = 0;
+      }).catch(() => {});
+
+      start.hidden = true;
+      countdown.hidden = false;
+
+      let n = 3;
+      const show = () => {
+        count.textContent = n;
+        count.classList.remove("tick");
+        void count.offsetWidth;
+        count.classList.add("tick");
+      };
+      show();
+
+      const timer = setInterval(() => {
+        n -= 1;
+        if (n > 0) {
+          show();
+          return;
+        }
+        clearInterval(timer);
+        countdown.hidden = true;
+        player.hidden = false;
+        video.currentTime = 0;
+        video.play().catch(() => {
+          /* if playback is still blocked, the controls let them press play */
+        });
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
